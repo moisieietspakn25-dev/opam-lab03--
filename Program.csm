@@ -1,0 +1,226 @@
+
+using System;
+using System.IO;
+
+class Program
+{
+    const int K = 19;
+    const int Target = K % 10; // 9
+
+    static int maxDepth = 0;
+    static int solutionCount = 0;
+
+    static void Main()
+    {
+        // Завдання 1
+        Console.WriteLine("=== Завдання 1: обхід каталогів ===");
+        Console.Write("Введіть шлях до папки: ");
+        string path = Console.ReadLine() ?? "";
+
+        if (Directory.Exists(path))
+        {
+            long csCount = 0;
+            long csSize = 0;
+
+            TraverseDirectory(path, ref csCount, ref csSize);
+
+            Console.WriteLine($"Кількість файлів .cs: {csCount}");
+            Console.WriteLine($"Сумарний розмір: {csSize} байтів");
+        }
+        else
+        {
+            Console.WriteLine("Помилка: вказаної папки не існує.");
+        }
+
+        // Завдання 2
+        Console.WriteLine("\n=== Завдання 2: рекурсивний підрахунок ===");
+
+        int[] numbers = new int[16];
+        Random random = new Random();
+
+        for (int i = 0; i < numbers.Length; i++)
+            numbers[i] = random.Next(-20, 21);
+
+        Console.WriteLine("Масив: " + string.Join(", ", numbers));
+
+        maxDepth = 0;
+        int recursiveResult = Solve(numbers, 0, numbers.Length - 1);
+
+        Console.WriteLine($"Кількість елементів > {Target}: {recursiveResult}");
+        Console.WriteLine($"Максимальна глибина рекурсії: {maxDepth}");
+        Console.WriteLine($"log2(16) = {Math.Log2(16)}");
+
+        // Завдання 3
+        Console.WriteLine("\n=== Завдання 3: підйом сходами ===");
+
+        int stairs = K % 8 + 5; // 8 сходинок
+        Console.WriteLine($"Кількість сходинок: {stairs}");
+
+        solutionCount = 0;
+        FindStairWays(stairs, new System.Collections.Generic.List<int>());
+
+        Console.WriteLine($"Загальна кількість способів: {solutionCount}");
+
+        // Завдання 4
+        Console.WriteLine("\n=== Завдання 4: трасування рекурсії ===");
+
+        int[] traceArray = { 7, -2, 15, 4 };
+        Console.WriteLine("Масив: " + string.Join(", ", traceArray));
+
+        int traceResult = SolveTrace(
+            traceArray, 0, traceArray.Length - 1, 0);
+
+        Console.WriteLine($"Результат: {traceResult}");
+
+        // Завдання 5
+        Console.WriteLine("\n=== Завдання 5: ітеративний алгоритм ===");
+
+        int iterativeResult = 0;
+
+        foreach (int number in numbers)
+        {
+            if (number > Target)
+                iterativeResult++;
+        }
+
+        Console.WriteLine($"Рекурсивний результат: {recursiveResult}");
+        Console.WriteLine($"Ітеративний результат: {iterativeResult}");
+        Console.WriteLine(
+            recursiveResult == iterativeResult
+                ? "Результати збігаються."
+                : "Результати не збігаються.");
+    }
+
+    // Завдання 1: рекурсивний обхід каталогів
+    static void TraverseDirectory(
+        string path, ref long count, ref long totalSize)
+    {
+        try
+        {
+            foreach (string file in Directory.EnumerateFiles(path))
+            {
+                try
+                {
+                    if (string.Equals(
+                        Path.GetExtension(file), ".cs",
+                        StringComparison.OrdinalIgnoreCase))
+                    {
+                        FileInfo info = new FileInfo(file);
+                        count++;
+                        totalSize += info.Length;
+                    }
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    Console.WriteLine($"Немає доступу до файлу: {file}");
+                }
+                catch (IOException)
+                {
+                    Console.WriteLine($"Не вдалося прочитати файл: {file}");
+                }
+            }
+        }
+        catch (UnauthorizedAccessException)
+        {
+            Console.WriteLine($"Пропущено папку без доступу: {path}");
+            return;
+        }
+        catch (IOException)
+        {
+            Console.WriteLine($"Не вдалося прочитати папку: {path}");
+            return;
+        }
+
+        try
+        {
+            foreach (string subdirectory
+                in Directory.EnumerateDirectories(path))
+            {
+                TraverseDirectory(subdirectory, ref count, ref totalSize);
+            }
+        }
+        catch (UnauthorizedAccessException)
+        {
+            Console.WriteLine($"Немає доступу до підпапок: {path}");
+        }
+        catch (IOException)
+        {
+            Console.WriteLine($"Не вдалося прочитати підпапки: {path}");
+        }
+    }
+
+    // Завдання 2: рекурсивне розбиття навпіл
+    static int Solve(int[] a, int lo, int hi)
+    {
+        return SolveCore(a, lo, hi, 0);
+    }
+
+    static int SolveCore(int[] a, int lo, int hi, int depth)
+    {
+        maxDepth = Math.Max(maxDepth, depth);
+
+        if (lo == hi)
+            return a[lo] > Target ? 1 : 0;
+
+        int mid = lo + (hi - lo) / 2;
+
+        int left = SolveCore(a, lo, mid, depth + 1);
+        int right = SolveCore(a, mid + 1, hi, depth + 1);
+
+        return left + right;
+    }
+
+    // Завдання 3: перебір усіх способів підйому сходами
+    static void FindStairWays(
+        int remaining,
+        System.Collections.Generic.List<int> steps)
+    {
+        if (remaining == 0)
+        {
+            Console.WriteLine(string.Join(" + ", steps));
+            solutionCount++;
+            return;
+        }
+
+        if (remaining < 0)
+            return;
+
+        // Вибір кроку 1
+        steps.Add(1);
+        FindStairWays(remaining - 1, steps);
+        steps.RemoveAt(steps.Count - 1); // повернення
+
+        // Вибір кроку 2
+        steps.Add(2);
+        FindStairWays(remaining - 2, steps);
+        steps.RemoveAt(steps.Count - 1); // повернення
+    }
+
+    // Завдання 4: трасування функції із завдання 2
+    static int SolveTrace(int[] a, int lo, int hi, int depth)
+    {
+        string indent = new string(' ', depth * 2);
+        Console.WriteLine(
+            $"{indent}enter Count({lo}..{hi})");
+
+        if (lo == hi)
+        {
+            int value = a[lo] > Target ? 1 : 0;
+            Console.WriteLine(
+                $"{indent}  -> {value}");
+            return value;
+        }
+
+        int mid = lo + (hi - lo) / 2;
+
+        int left = SolveTrace(a, lo, mid, depth + 1);
+        int right = SolveTrace(a, mid + 1, hi, depth + 1);
+
+        int result = left + right;
+
+        Console.WriteLine(
+            $"{indent}exit  Count({lo}..{hi}) -> {result}");
+
+        return result;
+    }
+}
